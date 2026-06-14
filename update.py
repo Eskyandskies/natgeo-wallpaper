@@ -1,28 +1,29 @@
 import requests
-import re
+from bs4 import BeautifulSoup
 
 url = "https://www.nationalgeographic.com/photography/photo-of-the-day/"
 
 headers = {
-    "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    "User-Agent": "Mozilla/5.0"
 }
 
-html = requests.get(url, headers=headers).text
+r = requests.get(url, headers=headers, timeout=20)
 
-match = re.search(
-    r'<meta property="og:image" content="([^"]+)"',
-    html
-)
+if r.status_code != 200:
+    raise Exception(f"HTTP {r.status_code}")
 
-if not match:
-    raise Exception("Image not found")
+soup = BeautifulSoup(r.text, "html.parser")
 
-img_url = match.group(1)
+img = soup.find("meta", property="og:image")
 
-img = requests.get(img_url, headers=headers)
+if not img:
+    raise Exception("og:image not found")
+
+img_url = img["content"]
+
+img_data = requests.get(img_url, headers=headers, timeout=20)
 
 with open("latest.jpg", "wb") as f:
-    f.write(img.content)
+    f.write(img_data.content)
 
-print("Updated")
+print("Updated:", img_url)
