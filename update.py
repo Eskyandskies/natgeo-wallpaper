@@ -1,7 +1,6 @@
 import requests
-from bs4 import BeautifulSoup
 
-url = "https://www.nationalgeographic.com/photography/photo-of-the-day/"
+url = "https://www.nationalgeographic.com/photography/photo-of-the-day/_jcr_content/.gallery.json"
 
 headers = {
     "User-Agent": "Mozilla/5.0"
@@ -10,20 +9,19 @@ headers = {
 r = requests.get(url, headers=headers, timeout=20)
 
 if r.status_code != 200:
-    raise Exception(f"HTTP {r.status_code}")
+    raise Exception(f"API HTTP {r.status_code}")
 
-soup = BeautifulSoup(r.text, "html.parser")
+data = r.json()
 
-img = soup.find("meta", property="og:image")
+# 通常第一张就是当天
+try:
+    image_url = data["items"][0]["src"]
+except Exception:
+    raise Exception("JSON structure changed")
 
-if not img:
-    raise Exception("og:image not found")
-
-img_url = img["content"]
-
-img_data = requests.get(img_url, headers=headers, timeout=20)
+img = requests.get(image_url, headers=headers, timeout=20)
 
 with open("latest.jpg", "wb") as f:
-    f.write(img_data.content)
+    f.write(img.content)
 
-print("Updated:", img_url)
+print("OK:", image_url)
