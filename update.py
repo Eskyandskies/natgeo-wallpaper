@@ -1,27 +1,18 @@
 import requests
 
-url = "https://www.nationalgeographic.com/photography/photo-of-the-day/_jcr_content/.gallery.json"
+api = "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN"
 
 headers = {
     "User-Agent": "Mozilla/5.0"
 }
 
-r = requests.get(url, headers=headers, timeout=20)
+data = requests.get(api, headers=headers).json()
 
-if r.status_code != 200:
-    raise Exception(f"API HTTP {r.status_code}")
+img_url = "https://www.bing.com" + data["images"][0]["url"]
 
-data = r.json()
-
-# 通常第一张就是当天
-try:
-    image_url = data["items"][0]["src"]
-except Exception:
-    raise Exception("JSON structure changed")
-
-img = requests.get(image_url, headers=headers, timeout=20)
+img = requests.get(img_url, headers=headers)
 
 with open("latest.jpg", "wb") as f:
     f.write(img.content)
 
-print("OK:", image_url)
+print("OK:", img_url)
